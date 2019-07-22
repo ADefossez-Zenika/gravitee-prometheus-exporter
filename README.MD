@@ -11,6 +11,7 @@ An exporter for Prometheus based on the logs backend (ElasticSearch) of Gravitee
 - ES_USER ElasticSearch basic auth user (default : 'None')
 - ES_PWD Elasticsearch basic auth password (default : 'None')
 - INDEX Index Pattern for Gravitee index. Must contains %Y, %m, %d. (default : gravitee-%Y.%m.%d)
+- PORT Port to listen on. (default : 8888)
 
 ## Internals
 
