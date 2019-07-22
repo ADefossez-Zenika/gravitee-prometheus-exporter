@@ -4,7 +4,7 @@ An exporter for Prometheus based on the logs backend (ElasticSearch) of Gravitee
 
 ## Environment variables
 
-- GIO_URL : Gravitee.IO management Url (default : http://localhost:8005/management )
+- GIO_URL : Gravitee.IO management Url (default : <http://localhost:8005/management> )
 - GIO_USR Gravitee basic auth Username (default : admin)
 - GIO_PWD Gravitee basic auth Password (default : admin)
 - ES_URL Elasticsearch Url (default : <http://localhost:9200)>
@@ -18,7 +18,7 @@ This application scrape Elasticsearch every time we call it. It consolidate data
 
 ### Cache
 
-To avoid too much trafic load on elasticsearch & gravitee, a little cache layer is added : 
+To avoid too much trafic load on elasticsearch & gravitee, a little cache layer is added
 
 - Api informations is available for 300 seconds (api name, owner name, description etc)
 - Logs Count is available for 10 seconds
