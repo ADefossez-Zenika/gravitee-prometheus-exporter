@@ -6,6 +6,8 @@ import requests
 import json
 from datetime import date
 from cachetools import cached, TTLCache  
+
+#CACHING
 cacheApiInfos = TTLCache(maxsize=100, ttl=300)  
 cacheResponsesCount = TTLCache(maxsize=100, ttl=10)  
 
@@ -14,14 +16,20 @@ class CustomCollector(object):
         pass
     
     def api_counter(self):
-            return 12
+        return 12 #TODO fixme
 
     @cached(cacheApiInfos)  # this function is cached, for 300 secs
-    def apiInfos(self, uuid):
-        curl=requests.get(GIO_URL+"/apis/"+uuid,auth=(GIO_USER, GIO_PWD))
-        return curl.json()
+    def apiInfos(self, uuid):  
+        try:
+            curl=requests.get(GIO_URL+"/apis/"+uuid, auth=(GIO_USER, GIO_PWD))
+            jsonResponse=curl.json()
+        except json.decoder.JSONDecodeError as err:
+            print ("Error de-serialising JSON : {}".format(err.msg))
+            raise
+        else:
+            return jsonResponse
 
-    @cached(cacheResponsesCount)  # this function is cached, for 300 secs
+    @cached(cacheResponsesCount)  # this function is cached, for 10 secs
     def responsesCount(self):
         postField= json.dumps({
         "size": 0,
@@ -102,8 +110,8 @@ def main():
         ES_PWD=os.getenv("ES_PWD", None)
 
         start_http_server(PORT)
+        REGISTRY.register(CustomCollector()) 
         print("Polling Gravitee.IO {} and ElasticSearch {} Serving at port: {}".format(GIO_URL, ES_URL, PORT))
-        REGISTRY.register(CustomCollector())
 
         while "it wont stop":
             time.sleep(1)
@@ -111,6 +119,11 @@ def main():
     except KeyboardInterrupt:
         print(" Interrupted")
         exit(0)
+    except ConnectionRefusedError:
+        print ("Connection Refused")
+        exit(1)
+    except requests.exceptions.ConnectionError as e:
+        print("Connection error! \n Error : {}".format(e))
 
 if __name__ == "__main__":
     main()
