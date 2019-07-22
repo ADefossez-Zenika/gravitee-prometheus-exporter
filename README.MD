@@ -22,3 +22,4 @@ To avoid too much trafic load on elasticsearch & gravitee, a little cache layer 
 
 - Api informations is available for 300 seconds (api name, owner name, description etc)
 - Logs Count is available for 10 seconds
+- Api count is available for 300 seconds

@@ -10,13 +10,21 @@ from cachetools import cached, TTLCache
 #CACHING
 cacheApiInfos = TTLCache(maxsize=100, ttl=300)  
 cacheResponsesCount = TTLCache(maxsize=100, ttl=10)  
+cacheApiCount = TTLCache(maxsize=100, ttl=300)  
 
 class CustomCollector(object):
     def __init__(self):
         pass
-    
-    def api_counter(self):
-        return 12 #TODO fixme
+
+    @cached(cacheApiCount)  # this function is cached, for 300 secs
+    def apiCounter(self):
+        try:
+            curl=requests.get(GIO_URL+"/apis/", auth=(GIO_USER, GIO_PWD))
+        except :
+            print("An error Occured during Api Count")
+            raise
+        else:
+            return len(curl.json())
 
     @cached(cacheApiInfos)  # this function is cached, for 300 secs
     def apiInfos(self, uuid):  
@@ -72,7 +80,7 @@ class CustomCollector(object):
 
     def collect(self):
         #Add Total number of Apis
-        count=self.api_counter()
+        count=self.apiCounter()
         yield GaugeMetricFamily('api_count', 'Number of APIS in Gravitee.io', value=count)
 
         c = GaugeMetricFamily('gio_http_call', 'Api calls', labels=('api_id','api_name','description','owner','uri','reponseCode'))
