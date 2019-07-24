@@ -79,9 +79,9 @@ class CustomCollector(object):
         }
         })
         headers={"Content-Type": "application/json"}
-        r = requests.get(ES_URL+"/"+INDEX+"/_search", data=postField, headers=headers, auth=(ES_USER, ES_PWD))
+        r = requests.get(ES_URL+"/"+ES_INDEX+"/_search", data=postField, headers=headers, auth=(ES_USER, ES_PWD))
         if r.status_code is not 200:
-            print("Something went wrong when fetching {}, got status code {}" .format(ES_URL+"/"+INDEX+"/_search", r.status_code))
+            print("Something went wrong when fetching {}, got status code {}" .format(ES_URL+"/"+ES_INDEX+"/_search", r.status_code))
             exit(1)
         result = r.json()   
         if result["hits"]["total"] is not None and result["hits"]["total"] > 0 :
@@ -115,16 +115,16 @@ def calculateIndex(pattern):
 
 def main():
     try:
-        global GIO_URL,GIO_USER,GIO_PWD, PORT, ES_URL, ES_PWD, ES_USER, INDEX 
-        INDEX=calculateIndex(os.getenv("GIO_INDEX_PATTERN", "gravitee")+"-%Y.%m.%d")
-        GIO_URL=os.getenv("GIO_URL", "http://localhost:8005/management").rstrip("/")
-        GIO_USER=os.getenv("GIO_USER", "admin")
-        GIO_PWD=os.getenv("GIO_PWD", "admin")
+        global GIO_URL,GIO_USER,GIO_PWD, PORT, ES_URL, ES_PWD, ES_USER, ES_INDEX 
+        ES_INDEX=calculateIndex(os.getenv("GPE_ES_INDEX", "gravitee")+"-%Y.%m.%d")
+        GIO_URL=os.getenv("GPE_GIO_URL", "http://localhost:8005/management").rstrip("/")
+        GIO_USER=os.getenv("GPE_GIO_USER", "admin")
+        GIO_PWD=os.getenv("GPE_GIO_PWD", "admin")
 
-        PORT=os.getenv("PORT", 8888)
-        ES_URL=os.getenv("ES_URL", "http://localhost:9200")
-        ES_USER=os.getenv("ES_USER", None)
-        ES_PWD=os.getenv("ES_PWD", None)
+        PORT=os.getenv("GPE_PORT", 8888)
+        ES_URL=os.getenv("GPE_ES_URL", "http://localhost:9200")
+        ES_USER=os.getenv("GPE_ES_USER", None)
+        ES_PWD=os.getenv("GPE_ES_PWD", None)
 
         start_http_server(PORT)
         REGISTRY.register(CustomCollector()) 
