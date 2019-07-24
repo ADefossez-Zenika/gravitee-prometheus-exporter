@@ -20,6 +20,9 @@ class CustomCollector(object):
     def apiCounter(self):
         try:
             curl=requests.get(GIO_URL+"/apis/", auth=(GIO_USER, GIO_PWD))
+            if curl.status_code is not 200:
+                print("Something went wrong when fetching {}, got status code {}" .format(GIO_URL+"/apis/", curl.status_code))
+                exit(1)
         except :
             print("An error Occured during Api Count")
             raise
@@ -30,6 +33,9 @@ class CustomCollector(object):
     def apiInfos(self, uuid):  
         try:
             curl=requests.get(GIO_URL+"/apis/"+uuid, auth=(GIO_USER, GIO_PWD))
+            if curl.status_code is not 200:
+                    print("Something went wrong when fetching {}, got status code {}" .format(GIO_URL+"/apis/"++uuid, curl.status_code))
+                    exit(1)
             jsonResponse=curl.json()
         except json.decoder.JSONDecodeError as err:
             print ("Error de-serialising JSON : {}".format(err.msg))
@@ -74,6 +80,9 @@ class CustomCollector(object):
         })
         headers={"Content-Type": "application/json"}
         r = requests.get(ES_URL+"/"+INDEX+"/_search", data=postField, headers=headers, auth=(ES_USER, ES_PWD))
+        if r.status_code is not 200:
+            print("Something went wrong when fetching {}, got status code {}" .format(ES_URL+"/"+INDEX+"/_search", r.status_code))
+            exit(1)
         result = r.json()   
         if result["hits"]["total"] is not None and result["hits"]["total"] > 0 :
             return result
@@ -107,7 +116,7 @@ def calculateIndex(pattern):
 def main():
     try:
         global GIO_URL,GIO_USER,GIO_PWD, PORT, ES_URL, ES_PWD, ES_USER, INDEX 
-        INDEX=calculateIndex(os.getenv("GIO_INDEX_PATTERN", "gravitee-%Y.%m.%d"))
+        INDEX=calculateIndex(os.getenv("GIO_INDEX_PATTERN", "gravitee")+"-%Y.%m.%d")
         GIO_URL=os.getenv("GIO_URL", "http://localhost:8005/management").rstrip("/")
         GIO_USER=os.getenv("GIO_USER", "admin")
         GIO_PWD=os.getenv("GIO_PWD", "admin")
