@@ -7,12 +7,13 @@ An exporter for Prometheus based on the logs backend (ElasticSearch) of Gravitee
 - GPE_GIO_URL : Gravitee.IO management Url (default : <http://localhost:8005/management> )
 - GPE_GIO_USR Gravitee basic auth Username (default : admin)
 - GPE_GIO_PWD Gravitee basic auth Password (default : admin)
-- GPE_ES_URL Elasticsearch Url (default : <http://localhost:9200)>
+- GPE_ES_URL Elasticsearch Url (default : <http://localhost:9200)>LOG_LEVEL
 - GPE_ES_USER ElasticSearch basic auth user (default : 'None')
 - GPE_ES_PWD Elasticsearch basic auth password (default : 'None')
 - GPE_ES_INDEX Index Pattern for Gravitee index. Must contains %Y, %m, %d. (default : gravitee-%Y.%m.%d)
 - GPE_PORT Port to listen on. (default : 8888)
-
+- LOG_LEVEL (ERROR, WARNING, INFO, DEBUG)
+  
 ## Metrics returned
 
     # HELP api_count Number of APIS in Gravitee.io

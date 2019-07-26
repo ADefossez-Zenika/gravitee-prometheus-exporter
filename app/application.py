@@ -1,7 +1,7 @@
 import os
 from prometheus_client import start_http_server, Summary, Gauge, Metric
 from prometheus_client.core import GaugeMetricFamily, CounterMetricFamily, REGISTRY
-import time, random
+import time, random, logging
 import requests
 import json
 from datetime import date
@@ -21,10 +21,10 @@ class CustomCollector(object):
         try:
             curl=requests.get(GIO_URL+"/apis/", auth=(GIO_USER, GIO_PWD), verify=False)
             if curl.status_code is not 200:
-                print("Something went wrong when fetching {}, got status code {}" .format(GIO_URL+"/apis/", curl.status_code))
+                logging.error("Something went wrong when fetching {}, got status code {}" .format(GIO_URL+"/apis/", curl.status_code))
                 exit(1)
         except :
-            print("An error Occured during Api Count")
+            logging.error("An error Occured during Api Count")
             raise
         else:
             return len(curl.json())
@@ -34,11 +34,11 @@ class CustomCollector(object):
         try:
             curl=requests.get(GIO_URL+"/apis/"+uuid, auth=(GIO_USER, GIO_PWD), verify=False)
             if curl.status_code is not 200:
-                    print("Something went wrong when fetching {}, got status code {}" .format(GIO_URL+"/apis/"++uuid, curl.status_code))
+                    logging.error("Something went wrong when fetching {}, got status code {}" .format(GIO_URL+"/apis/"++uuid, curl.status_code))
                     exit(1)
             jsonResponse=curl.json()
         except json.decoder.JSONDecodeError as err:
-            print ("Error de-serialising JSON : {}".format(err.msg))
+            logging.error("Error de-serialising JSON : {}".format(err.msg))
             raise
         else:
             return jsonResponse
@@ -83,10 +83,9 @@ class CustomCollector(object):
 
         r = requests.get(ES_URL+"/"+ES_INDEX+"/_search", data=postField, headers=headers, auth=(ES_USER, ES_PWD), verify=False)
         if r.status_code is not 200:
-            print("Something went wrong when fetching {}, got status code {}" .format(ES_URL+"/"+ES_INDEX+"/_search", r.status_code))
+            logging.error ("Something went wrong when fetching {}, got status code {}" .format(ES_URL+"/"+ES_INDEX+"/_search", r.status_code))
             exit(1)
         result = r.json()   
-        print(result)
         if result["hits"]["total"] is not None and result["hits"]["total"] > 0 :
             return result
 
@@ -122,6 +121,11 @@ def main():
         GIO_URL=os.getenv("GPE_GIO_URL", "http://localhost:8005/management").rstrip("/")
         GIO_USER=os.getenv("GPE_GIO_USER", "admin")
         GIO_PWD=os.getenv("GPE_GIO_PWD", "admin")
+        LOG_LEVEL=str(os.getenv("GPE_LOG_LEVEL", "info")).upper() #get log level
+        
+        if LOG_LEVEL not in ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET"]: #test if provided log level exists in logging module
+           raise ValueError('Invalid log level: %s' % LOG_LEVEL)
+        logging.basicConfig(level=LOG_LEVEL,format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
         PORT=int(os.getenv("GPE_PORT", 8888))
         ES_URL=os.getenv("GPE_ES_URL", "http://localhost:9200")
@@ -130,19 +134,19 @@ def main():
 
         start_http_server(PORT)
         REGISTRY.register(CustomCollector()) 
-        print("Polling Gravitee.IO {} and ElasticSearch {} Serving at port: {}".format(GIO_URL, ES_URL, PORT))
+        logging.info("Polling Gravitee.IO {} and ElasticSearch {} Serving at port: {}".format(GIO_URL, ES_URL, PORT))
 
         while "it wont stop":
             time.sleep(1)
 
     except KeyboardInterrupt:
-        print(" Interrupted")
+        logging.warning(" Interrupted")
         exit(0)
     except ConnectionRefusedError:
-        print ("Connection Refused")
+        logging.error("Connection Refused")
         exit(1)
     except requests.exceptions.ConnectionError as e:
-        print("Connection error! \n Error : {}".format(e))
+        logging.error ("Connection error! \n Error : {}".format(e))
 
 if __name__ == "__main__":
     main()
