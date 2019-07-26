@@ -19,7 +19,7 @@ class CustomCollector(object):
     @cached(cacheApiCount)  # this function is cached, for 300 secs
     def apiCounter(self):
         try:
-            curl=requests.get(GIO_URL+"/apis/", auth=(GIO_USER, GIO_PWD))
+            curl=requests.get(GIO_URL+"/apis/", auth=(GIO_USER, GIO_PWD), verify=False)
             if curl.status_code is not 200:
                 print("Something went wrong when fetching {}, got status code {}" .format(GIO_URL+"/apis/", curl.status_code))
                 exit(1)
@@ -32,7 +32,7 @@ class CustomCollector(object):
     @cached(cacheApiInfos)  # this function is cached, for 300 secs
     def apiInfos(self, uuid):  
         try:
-            curl=requests.get(GIO_URL+"/apis/"+uuid, auth=(GIO_USER, GIO_PWD))
+            curl=requests.get(GIO_URL+"/apis/"+uuid, auth=(GIO_USER, GIO_PWD), verify=False)
             if curl.status_code is not 200:
                     print("Something went wrong when fetching {}, got status code {}" .format(GIO_URL+"/apis/"++uuid, curl.status_code))
                     exit(1)
@@ -79,15 +79,19 @@ class CustomCollector(object):
         }
         })
         headers={"Content-Type": "application/json"}
-        r = requests.get(ES_URL+"/"+ES_INDEX+"/_search", data=postField, headers=headers, auth=(ES_USER, ES_PWD))
+        ES_INDEX=self.calculateIndex(os.getenv("GPE_ES_INDEX", "gravitee")+"-%Y.%m.%d")
+
+        r = requests.get(ES_URL+"/"+ES_INDEX+"/_search", data=postField, headers=headers, auth=(ES_USER, ES_PWD), verify=False)
         if r.status_code is not 200:
             print("Something went wrong when fetching {}, got status code {}" .format(ES_URL+"/"+ES_INDEX+"/_search", r.status_code))
             exit(1)
         result = r.json()   
+        print(result)
         if result["hits"]["total"] is not None and result["hits"]["total"] > 0 :
             return result
 
     def collect(self):
+
         #Add Total number of Apis
         count=self.apiCounter()
         yield GaugeMetricFamily('api_count', 'Number of APIS in Gravitee.io', value=count)
@@ -98,30 +102,28 @@ class CustomCollector(object):
         for i in responsesCodes["aggregations"]["request"]["api"]["buckets"]:
             for j in i["status"]["buckets"] :
                 apiInfo=self.apiInfos(i["key"])
-                #print (apiInfo['name'])
                 c.add_metric((i["key"], apiInfo['name'], apiInfo['description'], apiInfo['owner']["displayName"], apiInfo['context_path'], str(j["key"])),j["doc_count"])
         yield c
 
-def calculateIndex(pattern):
-    today=date.today()
-    mapping = [ 
-        ("%Y", today.strftime("%Y")), 
-        ("%m", today.strftime("%m")),
-        ("%d", today.strftime("%d")) 
-        ]
-    for k, v in mapping:
-        pattern = pattern.replace(k, v)
-    return pattern
+    def calculateIndex(self,pattern):
+        today=date.today()
+        mapping = [ 
+            ("%Y", today.strftime("%Y")), 
+            ("%m", today.strftime("%m")),
+            ("%d", today.strftime("%d")) 
+            ]
+        for k, v in mapping:
+            pattern = pattern.replace(k, v)
+        return pattern
 
 def main():
     try:
-        global GIO_URL,GIO_USER,GIO_PWD, PORT, ES_URL, ES_PWD, ES_USER, ES_INDEX 
-        ES_INDEX=calculateIndex(os.getenv("GPE_ES_INDEX", "gravitee")+"-%Y.%m.%d")
+        global GIO_URL,GIO_USER,GIO_PWD, PORT, ES_URL, ES_PWD, ES_USER 
         GIO_URL=os.getenv("GPE_GIO_URL", "http://localhost:8005/management").rstrip("/")
         GIO_USER=os.getenv("GPE_GIO_USER", "admin")
         GIO_PWD=os.getenv("GPE_GIO_PWD", "admin")
 
-        PORT=os.getenv("GPE_PORT", 8888)
+        PORT=int(os.getenv("GPE_PORT", 8888))
         ES_URL=os.getenv("GPE_ES_URL", "http://localhost:9200")
         ES_USER=os.getenv("GPE_ES_USER", None)
         ES_PWD=os.getenv("GPE_ES_PWD", None)
@@ -132,7 +134,7 @@ def main():
 
         while "it wont stop":
             time.sleep(1)
-            
+
     except KeyboardInterrupt:
         print(" Interrupted")
         exit(0)
