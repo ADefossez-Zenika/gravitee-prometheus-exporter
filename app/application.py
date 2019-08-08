@@ -94,9 +94,10 @@ class CustomCollector(object):
         r = requests.get(ES_URL+"/"+ES_INDEX+"/_search", data=postField,
                          headers=headers, auth=(ES_USER, ES_PWD), verify=False)
         if r.status_code is not 200:
-            logging.error("Something went wrong when fetching {}, got status code {}" .format(
+            logging.warning("Something went wrong when fetching {}, got status code {}" .format(
                 ES_URL+"/"+ES_INDEX+"/_search", r.status_code))
-            exit(1)
+            # If Elasticsearch is not available, or the index is not available (it happens on low traffic infrastructures) you should not exit, just alert and continue.
+            return False
         result = r.json()
         if result["hits"]["total"] is not None and result["hits"]["total"] > 0:
             return result
@@ -110,13 +111,13 @@ class CustomCollector(object):
         c = GaugeMetricFamily('gio_http_call', 'Api calls', labels=(
             'api_id', 'api_name', 'description', 'owner', 'uri', 'reponseCode'))
         responsesCodes = self.responsesCount()
-
-        for i in responsesCodes["aggregations"]["request"]["api"]["buckets"]:
-            for j in i["status"]["buckets"]:
-                apiInfo = self.apiInfos(i["key"])
-                c.add_metric((i["key"], apiInfo['name'], apiInfo['description'], apiInfo['owner']
-                              ["displayName"], apiInfo['context_path'], str(j["key"])), j["doc_count"])
-        yield c
+        if (responsesCodes):
+            for i in responsesCodes["aggregations"]["request"]["api"]["buckets"]:
+                for j in i["status"]["buckets"]:
+                    apiInfo = self.apiInfos(i["key"])
+                    c.add_metric((i["key"], apiInfo['name'], apiInfo['description'], apiInfo['owner']
+                                ["displayName"], apiInfo['context_path'], str(j["key"])), j["doc_count"])
+            yield c
 
     def calculateIndex(self, pattern):
         today = date.today()
