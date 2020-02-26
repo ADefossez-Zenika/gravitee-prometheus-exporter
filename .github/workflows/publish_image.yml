@@ -1,0 +1,27 @@
+name: Docker Image CI
+
+
+
+on:
+  push:
+    # Sequence of patterns matched against refs/heads
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - "*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Get the version
+      id: get_version
+      run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
+    - name: Publish to Registry
+      uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: satare/gravitee-prometheus-exporter:${{ steps.get_version.outputs.VERSION }}
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+

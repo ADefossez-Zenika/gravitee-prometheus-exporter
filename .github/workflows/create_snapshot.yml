@@ -1,18 +1,24 @@
 name: Docker Image CI
 
-on: [push]
+
+
+on:
+  push:
+    # Sequence of patterns matched against refs/heads
+    # Sequence of patterns matched against refs/tags
+    branches:
+      - "develop"
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
-        name: satare/gravitee-prometheus-exporter:latest
+        name: satare/gravitee-prometheus-exporter:nightly
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
+
+
